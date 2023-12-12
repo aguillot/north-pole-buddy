@@ -1,16 +1,22 @@
 version: "3.9"
 
 services:
-  npb_webhook:
-    image: north_pole_buddy
+  npb:
+    image: npb
     build:
       context: .
       dockerfile: Dockerfile
-      target: "nolambda"
+      target: "dev"
+    env_file:
+      - .env
+    environment:
+      - TELEGRAM_SECRET_TOKEN=test
+    volumes:
+      - .:/var/task/
+  npb_dev:
+    extends:
+      service: npb
     command: "uvicorn npb.app:app --host 0.0.0.0 --port 8000 --reload"
     ports:
       - "8000:8000"
-    env_file:
-      - .env
-    volumes:
-      - .:/var/task/
+  
