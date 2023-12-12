@@ -7,9 +7,9 @@ services:
       context: .
       dockerfile: Dockerfile
       target: "dev"
-    env_file:
-      - .env
     environment:
+      - OPENAI_API_KEY=
+      - TELEGRAM_BOT_TOKEN=dummy
       - TELEGRAM_SECRET_TOKEN=test
     volumes:
       - .:/var/task/
@@ -19,4 +19,6 @@ services:
     command: "uvicorn npb.app:app --host 0.0.0.0 --port 8000 --reload"
     ports:
       - "8000:8000"
+    env_file:
+      - .env
   
