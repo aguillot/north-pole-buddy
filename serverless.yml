@@ -1,0 +1,44 @@
+service: north-pole-buddy
+useDotenv: true
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  region: eu-west-1
+  runtime: python3.11
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+          - 's3:GetObject'
+          - 's3:PutObject'
+          - 's3:DeleteObject'
+          Resource:
+          - 'arn:aws:s3:::${env:S3_BUCKET}/*'
+  ecr:
+    scanOnPush: true
+    images:
+      baseimage:
+        path: ./
+        platform: linux/arm64
+
+functions:
+  npbtgbot:
+    image:
+      name: baseimage
+      command:
+        - "handler.handler"
+    architecture: arm64
+    memorySize: 180
+    timeout: 29
+    events:
+      - httpApi: '*'
+    environment:
+      S3_BUCKET: ${env:S3_BUCKET}
+      TELEGRAM_BOT_TOKEN: ${env:TELEGRAM_BOT_TOKEN}
+      TELEGRAM_SECRET_TOKEN: ${env:TELEGRAM_SECRET_TOKEN}
+      OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+      OPENAI_ASSISTANT_ID: ${env:OPENAI_ASSISTANT_ID}
+      LOGURU_LEVEL: INFO
+    maximumRetryAttempts: 1

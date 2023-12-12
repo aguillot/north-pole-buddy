@@ -1,0 +1,12 @@
+{
+  "commands": [
+    {
+      "command": "/start",
+      "description": "Start interacting with the bot"
+    },
+    {
+      "command": "/delcontext",
+      "description": "Clear the LLM chat context"
+    }
+  ]
+}
