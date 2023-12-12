@@ -1,0 +1,19 @@
+{
+    "update_id": 116421967,
+    "message": {
+        "message_id": 8,
+        "from": {
+            "id": 1234567890,
+            "is_bot": false,
+            "first_name": "Pytest",
+            "language_code": "fr"
+        },
+        "chat": {
+            "id": 1234567890,
+            "first_name": "Pytest",
+            "type": "private"
+        },
+        "date": 1701866475,
+        "text": "test"
+    }
+}
