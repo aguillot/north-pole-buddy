@@ -1,5 +1,5 @@
 import os
-from typing import Annotated, Union
+from typing import Union
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from loguru import logger
