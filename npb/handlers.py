@@ -2,18 +2,19 @@ from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import ContextTypes
 
+from npb import strings
 from npb.openai import (
-    get_vision_response,
-    get_location_completion,
     destroy_thread,
+    get_location_completion,
+    get_vision_response,
     send_thread_message,
 )
-from npb.utils import encode_photo_file_to_base64
 from npb.s3 import read_thread_id
+from npb.utils import encode_photo_file_to_base64
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("North Pole Buddy is ready, Ho ho ho")
+    await update.message.reply_text(strings.start_command_response)
 
 
 async def delcontext_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -21,7 +22,7 @@ async def delcontext_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     thread_id = await read_thread_id(user_id)
     if thread_id:
         await destroy_thread(user_id, thread_id)
-    await update.message.reply_text("Context cleared")
+    await update.message.reply_text(strings.context_cleared)
 
 
 async def photo_with_caption(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -32,7 +33,7 @@ async def photo_with_caption(update: Update, context: ContextTypes.DEFAULT_TYPE)
     answer = await get_vision_response(update.message.caption, b64_photo)
     await send_thread_message(
         update.effective_user.id,
-        f"Keep this message for context, don't answer it directly:\n{answer}",
+        f"{strings.add_vision_context}{answer}",
         run_thread=False,
     )
     await update.message.reply_text(answer)

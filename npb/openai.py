@@ -7,12 +7,14 @@ from loguru import logger
 from openai import Client
 from telegram import Message
 
-from npb import s3
+from npb import s3, strings
 from npb.utils import get_gpt_vision_payload
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_ASSISTANT_ID = os.getenv("OPENAI_ASSISTANT_ID", "")
 COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
+
+OPENAI_THREAD_STOPPED_STATES = ["completed", "cancelled", "failed", "expired"]
 
 HEADERS = {
     "Content-Type": "application/json",
@@ -20,34 +22,16 @@ HEADERS = {
 }
 
 LOCATION_PROMPTS = [
-    """
-    Based on the gps coordinates provided by the user, Give me a funny christmas story about the location of the user.
-    When you reply, don't mention the gps coordinates. But you can mention the town name or the region name
-
-    The user localisation is: {coords}
-    """,
-    """
-    Based on the gps coordinates provided by the user, create a list of 10 christmas gift based and culture, tradition and specialty for that area.
-    When you reply, don't mention the gps coordinates but the town or region of the user.
-
-    The user localisation is: {coords}
-    """,
-    """
-    Based on the gps coordinates provided by the user, suggest somes places to visit for that region.
-    Theses places must have a link to christmas
-    When you reply, don't mention the gps coordinates but the town or region of the user.
-
-    The user localisation is: {coords}
-    """,
+    strings.location_story,
+    strings.location_gifts,
+    strings.location_visits,
 ]
-
-EXTRA_PROMPT = "Act and respond in the voice and tone of Santa Claus"
 
 client = Client()
 
 
 async def get_vision_response(prompt: str, encoded_photo: str) -> str:
-    payload = await get_gpt_vision_payload(encoded_photo, prompt, EXTRA_PROMPT)
+    payload = await get_gpt_vision_payload(encoded_photo, prompt, strings.act_as_santa)
     async with httpx.AsyncClient() as client:
         timeout = httpx.Timeout(25.0, read=None)
         response = await client.post(
@@ -61,7 +45,7 @@ async def get_vision_response(prompt: str, encoded_photo: str) -> str:
         logger.warning(
             f"cannot get image description, {response.status_code=}, {json_response}"
         )
-        return "Cannot see"
+        return strings.vision_no_answer
 
 
 async def get_location_completion(message: Message) -> str:
@@ -94,9 +78,10 @@ async def send_thread_message(
         run = client.beta.threads.runs.create(
             thread_id, assistant_id=OPENAI_ASSISTANT_ID
         )
-        while client.beta.threads.runs.retrieve(
-            run.id, thread_id=thread_id
-        ).status not in ["completed", "cancelled", "failed", "expired"]:
+        while (
+            client.beta.threads.runs.retrieve(run.id, thread_id=thread_id).status
+            not in OPENAI_THREAD_STOPPED_STATES
+        ):
             await asyncio.sleep(1.0)
         messages = client.beta.threads.messages.list(thread_id)
         latest_answer = messages.data[0].content[0].text.value
