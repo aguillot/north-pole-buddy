@@ -1,6 +1,6 @@
 from telegram import Update
+from telegram.constants import ChatAction
 from telegram.ext import ContextTypes
-from loguru import logger
 
 from npb.openai import (
     get_vision_response,
@@ -25,19 +25,27 @@ async def delcontext_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 async def photo_with_caption(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.effective_chat.send_chat_action(action=ChatAction.TYPING)
     best_photo = max(update.message.photo, key=lambda x: x.width * x.height)
     photo_file = await best_photo.get_file()
     b64_photo = await encode_photo_file_to_base64(photo_file)
     answer = await get_vision_response(update.message.caption, b64_photo)
+    await send_thread_message(
+        update.effective_user.id,
+        f"Keep this message for context, don't answer it directly:\n{answer}",
+        run_thread=False,
+    )
     await update.message.reply_text(answer)
 
 
 async def location(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.effective_chat.send_chat_action(action=ChatAction.TYPING)
     answer = await get_location_completion(update.message)
     await update.message.reply_text(answer)
 
 
 async def chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.effective_chat.send_chat_action(action=ChatAction.TYPING)
     user_id = update.message.from_user.id
     answer = await send_thread_message(user_id, update.message.text)
     await update.message.reply_text(answer)

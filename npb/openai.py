@@ -85,15 +85,19 @@ async def destroy_thread(user_id: int, thread_id: str):
     client.beta.threads.delete(thread_id)
 
 
-async def send_thread_message(user_id: int, message: str) -> str:
+async def send_thread_message(
+    user_id: int, message: str, run_thread: bool = True
+) -> str:
     thread_id = await get_thread_id(user_id)
     client.beta.threads.messages.create(thread_id, content=message, role="user")
-    run = client.beta.threads.runs.create(thread_id, assistant_id=OPENAI_ASSISTANT_ID)
-    while (
-        client.beta.threads.runs.retrieve(run.id, thread_id=thread_id).status
-        != "completed"
-    ):
-        await asyncio.sleep(1.0)
-    messages = client.beta.threads.messages.list(thread_id)
-    latest_answer = messages.data[0].content[0].text.value
-    return latest_answer
+    if run_thread:
+        run = client.beta.threads.runs.create(
+            thread_id, assistant_id=OPENAI_ASSISTANT_ID
+        )
+        while client.beta.threads.runs.retrieve(
+            run.id, thread_id=thread_id
+        ).status not in ["completed", "cancelled", "failed", "expired"]:
+            await asyncio.sleep(1.0)
+        messages = client.beta.threads.messages.list(thread_id)
+        latest_answer = messages.data[0].content[0].text.value
+        return latest_answer
