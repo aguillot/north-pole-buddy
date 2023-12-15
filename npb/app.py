@@ -17,6 +17,7 @@ async def verify_telegram_secret_token(
     x_telegram_bot_api_secret_token: Union[str, None] = Header(None)
 ):
     if x_telegram_bot_api_secret_token != TELEGRAM_SECRET_TOKEN:
+        logger.warning("received request with wrong secret token")
         raise HTTPException(status_code=401, detail=strings.wrong_token)
 
 
